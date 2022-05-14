@@ -1,0 +1,157 @@
+---
+title: "ETC3250/5250 - Project 2022"
+subtitle: Predicting the celltype from gene motifs in mouse development
+author: developed by Professor Di Cook, with data from Emily Wong's lab
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  eval = FALSE,
+  message = FALSE,
+  warning = FALSE)
+```
+
+# Purpose
+
+This project provides the opportunity for practising your supervised learning skills. The competition format enables to objectively compare how well your model performs against other models.
+
+This is also a place where you can exercise your creativity. You will also  want to explore the data, how the distribution varies between classes, what fires are hard to classify, and why. Its an opportunity to practice your data exploration skills, too. 
+
+# Task
+
+This is a KaggleInClass challenge, you can find at https://www.kaggle.com/c/antechinus/. 
+
+Your task is to predict the celltype of the samples based on the gene expression values. Celltype is one of 10 possibilities (cardiomyocyte, endothelium, erythroid, forebrain, gut, mesenchyme, mid_hindbrain,   neural_crest, somitic_mesoderm, spinalCord). The classes are a little imbalanced. You are expected to build a model to predict which it is, as accurately as possible. 
+
+It is also expected that you obtain some understanding of the variables that are most important for making an accurate prediction, and to detect any fires in the training set which might have be problematic, anomalies or misclassified.
+
+## About the data
+
+- See "Data" tab on the kaggle site to download training and test data: 
+    - `mouse_tr.csv` contains the full training set.
+    - `mouse_ts_mask.csv` contains the test set that you need to predict, has all of the same variables as the training set except for the `celltype` variable
+    - `mouse_ts_samp.csv` contains a sample set of predictions, with random values for the cell type, so you can see the format needed for your submission `csv` file.
+    
+The training set has 1003 variables. The first variable `location` is a unique label for each sample, and should not be used in the modelling. There ten cell types: 
+
+```
+ 1 cardiomyocyte      663
+ 2 endothelium       1321
+ 3 erythroid          753
+ 4 forebrain          338
+ 5 gut                487
+ 6 mesenchyme         389
+ 7 mid_hindbrain      303
+ 8 neural_crest       480
+ 9 somitic_mesoderm   793
+10 spinalCord         797
+```
+
+The predictors are all different gene motifs, a nucleic acid sequence pattern that has some biological significance. 
+
+
+## Making predictions
+
+This sample code will build a random forest model, predict the test data. You need to **write out your predictions in the format required for submission to kaggle** a `csv` with two columns labelled `location` and `celltype`, where the `location` column is as given in the test set, and `celltype` is text string matching one of the classes.
+
+```{r echo=TRUE, eval=FALSE}
+# Example analysis
+library(tidyverse)
+library(tidymodels)
+library(randomForest)
+
+# Read data
+tr <- read_csv("mouse_tr.csv") %>%
+  mutate(celltype = factor(celltype)) 
+
+
+ts <- read_csv("mouse_ts_mask.csv")
+
+
+tr_fct <- tr %>% 
+  select (-1) %>%
+  mutate_if(is.numeric, as.factor)
+
+# Fit a basic model
+# mouse_rf <- rand_forest() %>%
+#   set_engine("randomForest",
+#              importance=TRUE) %>%
+#   set_mode("classification") %>%
+#   fit(celltype~., data=tr[,-1])
+# mouse_rf
+# conf_mat(tr_pred, celltype, pred)
+# conf_mat(tr_pred, celltype, pred) %>% summary
+# 
+# # Make predictions
+# mouse_pred <- ts %>%
+#   mutate(celltype = ts_sol$celltype,
+#                          pred = predict(tr_f, ts))
+# 
+# write_csv(mouse_pred[,c(1, 1006)], file="mouse_mypred.csv")
+```
+
+## Evaluation Criteria
+
+The kaggle criteria CategorizationAccuracy is used to assess your prediction. 
+
+$$\mbox{Accuracy}(y, \hat{y}) = \frac{1}{n}\sum_{i=1}^n I(y==\hat{y})$$
+
+```{r}
+tr %>% janitor::tabyl()
+```
+
+
+NOTE: This is an imbalanced class problem, but this metric ignores this. My initial project description used the `WeightedClassificationAccuracy`, but it is not clear how this is being calculated inside kaggle. The imbalance is not very severe, and the classification is very difficult, anyway, so I've simplified the metric.
+
+## Tasks
+
+1. Your first task is to create a Kaggle account (___using your Monash email address___, ideally. A private email would be ok too, if you have trouble registering with your Monash email, but if you do this please use your monash email address as your username, without the @monash.edu.). Your username needs to be visible, and recognisable. This is necessary to match your submissions to the class grade sheet. If I cannot recognise name, your submissions will not count for your project score. 
+2. Upload your first predictions. Make it a really bad one. This sets your baseline score as really low, you have nowhere to go but up!
+3. Submissions need to be made as an individual. 
+4. Do some basic exploration of the dataset.
+6. Build your first model. Predict the test set, and upload your predictions to Kaggle.
+7. Try, and try again to improve your model. You can submit ___two predictions___ per day.
+8. You can get your score on the private for four of your submissions.
+9. The data providers can get an accuracy of 0.81, but my best is about 0.6. 
+
+# Turn in
+
+- Your R code to produce your best model predictions. This should be an R script file. The file name needs to be "model.R". This code needs to be reproducible so that it can be run by the teaching team to check your solution.
+- A one page Rmarkdown report (as `pdf` or `html`, + `Rmd`) that summarises what you learned about the data and the modeling. Roughly, organise it with one paragraph on each of the
+    - data pre-processing steps (e.g transformations, outlier removal)
+    - important variables for the prediction
+    - model performance (e.g boosted tree provided 0.1% better accuracy than random forest, using `mtry=5` in random forest produced better accuracy) 
+
+# Rules
+
+- You are allowed only one kaggle account. Any violation of this rule will result in a zero mark.
+- Access to the competition will be provided by a link, which will be given in moodle once the site is opened. Only members of this class can enter the competition. If we discover that you have shared the link with friends outside the class, and they enter, you will receive a zero mark. 
+
+# Grading
+
+**Total points: 20** with the following breakdown:
+
+- Accuracy on Kaggle: 10 (The benchmark is set by a default random forest fit to be 0.44/0.43 public/private accuracy -- yes, more wrong than right.  You at least need to beat this to get a passing accuracy mark -- 50% -- for your submission.)
+- Code: 5 (Clearly written and---
+title: "ETC 3550 Assignment 8"
+author: "Zhen Khang Lincoln 30437393"
+date: "12/05/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+ documented and instructor can generate the predictions of your best model submitted to Kaggle.)
+- Report: 5 (Describing key aspects of the data and your modeling, spell-checked and readable.)
+- ETC5250 students will be marked out of 30, with 10 points being awarded from the presentation in week 12.
+
+# Deadlines
+
+Do not wait until the last minute. ___Late submissions will not be accepted.___
+
+- May 20, 11:55pm: The Kaggle competition closes. No more submissions will be accepted.
+- May 22, 11:55pm: Upload to Moodle (i) your code, and (ii) one page report.
